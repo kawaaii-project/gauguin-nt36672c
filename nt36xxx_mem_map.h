@@ -1,8 +1,9 @@
 /*
  * Copyright (C) 2010 - 2018 Novatek, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
- * $Revision: 43248 $
- * $Date: 2019-04-12 11:06:27 +0800 (週五, 12 四月 2019) $
+ * $Revision: 32206 $
+ * $Date: 2018-08-10 19:23:04 +0800 (週五, 10 八月 2018) $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +49,14 @@ struct nvt_ts_mem_map {
 	uint32_t DMA_CRC_EN_ADDR;
 	uint32_t BLD_ILM_DLM_CRC_ADDR;
 	uint32_t DMA_CRC_FLAG_ADDR;
+	uint32_t FFM2CPU_CTL;
+	uint32_t F2C_LENGTH;
+	uint32_t CPU_IF_ADDR_LOW;
+	uint32_t CPU_IF_ADDR_HIGH;
+	uint32_t FFM_ADDR_LOW;
+	uint32_t FFM_ADDR_MID;
+	uint32_t FFM_ADDR_HIGH;
+	uint32_t FW_HISTORY_ADDR;
 };
 
 struct nvt_ts_hw_info {
@@ -86,6 +95,14 @@ static const struct nvt_ts_mem_map NT36675_memory_map = {
 	.DMA_CRC_EN_ADDR          = 0x3F136,
 	.BLD_ILM_DLM_CRC_ADDR     = 0x3F133,
 	.DMA_CRC_FLAG_ADDR        = 0x3F134,
+	.FFM2CPU_CTL              = 0x3F280,
+	.F2C_LENGTH               = 0x3F283,
+	.CPU_IF_ADDR_LOW          = 0x3F284,
+	.CPU_IF_ADDR_HIGH         = 0x3F285,
+	.FFM_ADDR_LOW             = 0x3F286,
+	.FFM_ADDR_MID             = 0x3F287,
+	.FFM_ADDR_HIGH            = 0x3F288,
+	.FW_HISTORY_ADDR          = 0x23D10,
 };
 
 
@@ -214,6 +231,8 @@ struct nvt_ts_trim_id_table {
 };
 
 static const struct nvt_ts_trim_id_table trim_id_table[] = {
+	{.id = {0x0C, 0xFF, 0xFF, 0x72, 0x66, 0x03}, .mask = {1, 0, 0, 1, 1, 1},
+		.mmap = &NT36675_memory_map,  .hwinfo = &NT36675_hw_info},
 	{.id = {0xFF, 0xFF, 0xFF, 0x75, 0x66, 0x03}, .mask = {0, 0, 0, 1, 1, 1},
 		.mmap = &NT36675_memory_map,  .hwinfo = &NT36675_hw_info},
 	{.id = {0x0B, 0xFF, 0xFF, 0x72, 0x66, 0x03}, .mask = {1, 0, 0, 1, 1, 1},
