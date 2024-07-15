@@ -77,7 +77,7 @@ extern const uint16_t touch_key_array[TOUCH_KEY_NUM];
 #define TOUCH_FORCE_NUM 1000
 
 /* Enable only when module have tp reset pin and connected to host */
-#define NVT_TOUCH_SUPPORT_HW_RST 0
+#define NVT_TOUCH_SUPPORT_HW_RST 1
 
 //---Customerized func.---
 #define NVT_TOUCH_PROC 1
@@ -89,20 +89,32 @@ extern const uint16_t touch_key_array[TOUCH_KEY_NUM];
 extern const uint16_t gesture_key_array[];
 #endif
 #define BOOT_UPDATE_FIRMWARE 1
-#define BOOT_UPDATE_FIRMWARE_NAME "novatek_ts_fw.bin"
-#define MP_UPDATE_FIRMWARE_NAME   "novatek_ts_mp.bin"
+#define DEFAULT_BOOT_UPDATE_FIRMWARE_FIRST "novatek_ts_fw01.bin"
+#define DEFAULT_MP_UPDATE_FIRMWARE_FIRST   "novatek_ts_mp01.bin"
+#define DEFAULT_BOOT_UPDATE_FIRMWARE_SECOND "novatek_ts_fw02.bin"
+#define DEFAULT_MP_UPDATE_FIRMWARE_SECOND   "novatek_ts_mp02.bin"
 #define POINT_DATA_CHECKSUM 1
 #define POINT_DATA_CHECKSUM_LEN 65
 
 //---ESD Protect.---
-#define NVT_TOUCH_ESD_PROTECT 0
+#define NVT_TOUCH_ESD_PROTECT 1
 #define NVT_TOUCH_ESD_CHECK_PERIOD 1500	/* ms */
 #define NVT_TOUCH_WDT_RECOVERY 1
 
+struct nvt_config_info {
+	u8 tp_vendor;
+	u8 display_maker;
+	u8 glass_vendor;
+	const char *nvt_fw_name;
+	const char *nvt_mp_name;
+};
+
 struct nvt_ts_data {
 	struct spi_device *client;
+	struct platform_device *pdev;
 	struct input_dev *input_dev;
 	struct delayed_work nvt_fwu_work;
+	struct delayed_work nvt_lockdown_work;
 	uint16_t addr;
 	int8_t phys[32];
 #if defined(CONFIG_FB)
@@ -141,6 +153,14 @@ struct nvt_ts_data {
 #ifdef CONFIG_SPI_MT65XX
     struct mtk_chip_config spi_ctrl;
 #endif
+	bool lkdown_readed;
+	u8 lockdown_info[NVT_LOCKDOWN_SIZE];
+	uint32_t config_array_size;
+	struct nvt_config_info *config_array;
+	int panel_index;
+	const u8 *fw_name;
+	const u8 *mp_name;
+	uint32_t spi_max_freq;
 };
 
 #if NVT_TOUCH_PROC
@@ -197,6 +217,7 @@ int32_t nvt_clear_fw_status(void);
 int32_t nvt_check_fw_status(void);
 int32_t nvt_set_page(uint32_t addr);
 int32_t nvt_write_addr(uint32_t addr, uint8_t data);
+void nvt_match_fw(void);
 #if NVT_TOUCH_ESD_PROTECT
 extern void nvt_esd_check_enable(uint8_t enable);
 #endif /* #if NVT_TOUCH_ESD_PROTECT */

@@ -933,8 +933,11 @@ return:
 *******************************************************/
 void Boot_Update_Firmware(struct work_struct *work)
 {
+	nvt_match_fw();
 	mutex_lock(&ts->lock);
-	nvt_update_firmware(BOOT_UPDATE_FIRMWARE_NAME);
+	nvt_update_firmware(ts->fw_name);
+	nvt_get_fw_info();
 	mutex_unlock(&ts->lock);
+	pm_relax(&ts->pdev->dev);
 }
 #endif /* BOOT_UPDATE_FIRMWARE */
