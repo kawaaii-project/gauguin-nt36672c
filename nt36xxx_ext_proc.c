@@ -1,9 +1,8 @@
-// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2010 - 2018 Novatek, Inc.
  *
- * $Revision: 47247 $
- * $Date: 2019-07-10 10:41:36 +0800 (Wed, 10 Jul 2019) $
+ * $Revision: 47376 $
+ * $Date: 2019-07-12 09:06:29 +0800 (週五, 12 七月 2019) $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +28,7 @@
 #define NVT_RAW "nvt_raw"
 #define NVT_DIFF "nvt_diff"
 
-#define BUS_TRANSFER_LENGTH  64
+#define BUS_TRANSFER_LENGTH  256
 
 #define NORMAL_MODE 0x00
 #define TEST_MODE_1 0x21
@@ -58,17 +57,17 @@ void nvt_change_mode(uint8_t mode)
 	uint8_t buf[8] = {0};
 
 	//---set xdata index to EVENT BUF ADDR---
-	nvt_set_page(I2C_FW_Address, ts->mmap->EVENT_BUF_ADDR | EVENT_MAP_HOST_CMD);
+	nvt_set_page(ts->mmap->EVENT_BUF_ADDR | EVENT_MAP_HOST_CMD);
 
 	//---set mode---
 	buf[0] = EVENT_MAP_HOST_CMD;
 	buf[1] = mode;
-	CTP_I2C_WRITE(ts->client, I2C_FW_Address, buf, 2);
+	CTP_SPI_WRITE(ts->client, buf, 2);
 
 	if (mode == NORMAL_MODE) {
 		buf[0] = EVENT_MAP_HANDSHAKING_or_SUB_CMD_BYTE;
 		buf[1] = HANDSHAKING_HOST_READY;
-		CTP_I2C_WRITE(ts->client, I2C_FW_Address, buf, 2);
+		CTP_SPI_WRITE(ts->client, buf, 2);
 		msleep(20);
 	}
 }
@@ -85,12 +84,12 @@ uint8_t nvt_get_fw_pipe(void)
 	uint8_t buf[8]= {0};
 
 	//---set xdata index to EVENT BUF ADDR---
-	nvt_set_page(I2C_FW_Address, ts->mmap->EVENT_BUF_ADDR | EVENT_MAP_HANDSHAKING_or_SUB_CMD_BYTE);
+	nvt_set_page(ts->mmap->EVENT_BUF_ADDR | EVENT_MAP_HANDSHAKING_or_SUB_CMD_BYTE);
 
 	//---read fw status---
 	buf[0] = EVENT_MAP_HANDSHAKING_or_SUB_CMD_BYTE;
 	buf[1] = 0x00;
-	CTP_I2C_READ(ts->client, I2C_FW_Address, buf, 2);
+	CTP_SPI_READ(ts->client, buf, 2);
 
 	//NVT_LOG("FW pipe=%d, buf[1]=0x%02X\n", (buf[1]&0x01), buf[1]);
 
@@ -126,13 +125,13 @@ void nvt_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
 	//read xdata : step 1
 	for (i = 0; i < ((dummy_len + data_len) / XDATA_SECTOR_SIZE); i++) {
 		//---change xdata index---
-		nvt_set_page(I2C_FW_Address, head_addr + XDATA_SECTOR_SIZE * i);
+		nvt_set_page(head_addr + XDATA_SECTOR_SIZE * i);
 
 		//---read xdata by BUS_TRANSFER_LENGTH
 		for (j = 0; j < (XDATA_SECTOR_SIZE / BUS_TRANSFER_LENGTH); j++) {
 			//---read data---
 			buf[0] = BUS_TRANSFER_LENGTH * j;
-			CTP_I2C_READ(ts->client, I2C_FW_Address, buf, BUS_TRANSFER_LENGTH + 1);
+			CTP_SPI_READ(ts->client, buf, BUS_TRANSFER_LENGTH + 1);
 
 			//---copy buf to xdata_tmp---
 			for (k = 0; k < BUS_TRANSFER_LENGTH; k++) {
@@ -146,13 +145,13 @@ void nvt_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
 	//read xdata : step2
 	if (residual_len != 0) {
 		//---change xdata index---
-		nvt_set_page(I2C_FW_Address, xdata_addr + data_len - residual_len);
+		nvt_set_page(xdata_addr + data_len - residual_len);
 
 		//---read xdata by BUS_TRANSFER_LENGTH
 		for (j = 0; j < (residual_len / BUS_TRANSFER_LENGTH + 1); j++) {
 			//---read data---
 			buf[0] = BUS_TRANSFER_LENGTH * j;
-			CTP_I2C_READ(ts->client, I2C_FW_Address, buf, BUS_TRANSFER_LENGTH + 1);
+			CTP_SPI_READ(ts->client, buf, BUS_TRANSFER_LENGTH + 1);
 
 			//---copy buf to xdata_tmp---
 			for (k = 0; k < BUS_TRANSFER_LENGTH; k++) {
@@ -171,11 +170,11 @@ void nvt_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
 #if TOUCH_KEY_NUM > 0
 	//read button xdata : step3
 	//---change xdata index---
-	nvt_set_page(I2C_FW_Address, xdata_btn_addr);
+	nvt_set_page(xdata_btn_addr);
 
 	//---read data---
 	buf[0] = (xdata_btn_addr & 0xFF);
-	CTP_I2C_READ(ts->client, I2C_FW_Address, buf, (TOUCH_KEY_NUM * 2 + 1));
+	CTP_SPI_READ(ts->client, buf, (TOUCH_KEY_NUM * 2 + 1));
 
 	//---2bytes-to-1data---
 	for (i = 0; i < TOUCH_KEY_NUM; i++) {
@@ -184,7 +183,7 @@ void nvt_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
 #endif
 
 	//---set xdata index to EVENT BUF ADDR---
-	nvt_set_page(I2C_FW_Address, ts->mmap->EVENT_BUF_ADDR);
+	nvt_set_page(ts->mmap->EVENT_BUF_ADDR);
 }
 
 /*******************************************************
